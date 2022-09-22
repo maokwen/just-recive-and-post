@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>共享账号 短信验证码</title>
+</head>
+
+<script type="text/javascript">
+  const clear_all = async () => {
+    const res = await fetch('db/', { method: 'DELETE' });
+    if (res.status == 200) {
+      var s = document.getElementById("clear_all_code");
+      s.innerHTML = "Success! Please refresh the page.";
+    } else {
+      var s = document.getElementById("clear_all_code");
+      s.innerHTML = "Failure! Error code " + res.status + ".";
+    }
+  }
+</script>
+
+<body>
+  <button onclick="clear_all()">Clear All</button>
+  <span id="clear_all_code"></span>
+  {% if msgs %}
+  <div id="messages">
+    {% for msg in msgs %}
+    <div class="date">{{ msg.date }}</div>
+    <div class="text">{{ msg.text }}</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No message.</p>
+  {% endif %}
+</body>
+
+</html>
