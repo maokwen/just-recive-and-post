@@ -9,44 +9,26 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - id: vars
-        run: echo ::set-output name=tag::$(date '+%Y-%m-%d')-$(git rev-parse --short HEAD)
-
-      - uses: actions-rs/toolchain@v1
+      - name: Log in to the GitHub Container registry
+        uses: redhat-actions/podman-login@v1
         with:
-          toolchain: stable
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions-rs/cargo@v1
+      - name: Buildah Action
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
         with:
-          command: build
-          args: --release --all-features
+          image: maokwen/just-recive-and-post
+          tags: latest
+          containerfiles: |
+            ./Containerfile
 
-      - name: ZIP files
-        run: |
-          cp target/release/just-recive-and-post just-recive-and-post
-          zip just-recive-and-post.zip just-recive-and-post
-          zip just-recive-and-post.zip Rocket.toml
-          zip just-recive-and-post.zip db
-          zip just-recive-and-post.zip static
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to GitHub Container Repository
+        id: push-to-ghcr
+        uses: redhat-actions/push-to-registry@v2
         with:
-          tag_name: ${{steps.vars.outputs.tag}}
-          release_name: ${{steps.vars.outputs.tag}}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./just-recive-and-post.zip
-          asset_name: just-recive-and-post.zip
-          asset_content_type: application/zip
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ghcr.io
