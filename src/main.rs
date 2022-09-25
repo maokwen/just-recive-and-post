@@ -7,7 +7,7 @@ extern crate rocket_sync_db_pools;
 mod test;
 
 use rocket::fairing::AdHoc;
-use rocket::fs::{relative, FileServer};
+use rocket::fs::FileServer;
 use rocket::response::{status::Created, Debug};
 use rocket::serde::{json::Json, Deserialize, Serialize};
 use rocket::{Build, Rocket};
@@ -152,6 +152,6 @@ fn rocket() -> _ {
         .attach(AdHoc::on_ignite("Rusqlite Init", init_db))
         .mount("/db", routes![list, create, read, delete, destroy])
         .attach(Template::fairing())
-        .mount("/", FileServer::from(relative!("static")))
+        .mount("/", FileServer::from("static"))
         .mount("/", routes![index])
 }
