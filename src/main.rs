@@ -26,7 +26,7 @@ struct Db(rusqlite::Connection);
 struct Message {
     #[serde(skip_deserializing, skip_serializing_if = "Option::is_none")]
     id: Option<i64>,
-    date: String,
+    msg_type: String,
     text: String,
 }
 
@@ -50,8 +50,8 @@ async fn create(db: Db, msg: Json<Message>) -> Result<Created<Json<Message>>> {
     let item = msg.clone();
     db.run(move |conn| {
         conn.execute(
-            "INSERT INTO msgs (date, text) VALUES (?1, ?2)",
-            params![item.date, item.text],
+            "INSERT INTO msgs (msg_type, text) VALUES (?1, ?2)",
+            params![item.msg_type, item.text],
         )
     })
     .await?;
@@ -64,12 +64,12 @@ async fn read(db: Db, id: i64) -> Option<Json<Message>> {
     let post = db
         .run(move |conn| {
             conn.query_row(
-                "SELECT id, date, text FROM msgs WHERE id = ?1",
+                "SELECT id, msg_type, text FROM msgs WHERE id = ?1",
                 params![id],
                 |r| {
                     Ok(Message {
                         id: Some(r.get(0)?),
-                        date: r.get(1)?,
+                        msg_type: r.get(1)?,
                         text: r.get(2)?,
                     })
                 },
@@ -107,7 +107,7 @@ async fn init_db(rocket: Rocket<Build>) -> Rocket<Build> {
                 r#"
             CREATE TABLE IF NOT EXISTS msgs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date VARCHAR NOT NULL,
+                msg_type VARCHAR NOT NULL,
                 text VARCHAR NOT NULL,
                 published BOOLEAN NOT NULL DEFAULT 0
             )"#,
@@ -130,11 +130,11 @@ struct Context {
 async fn index(db: Db) -> Template {
     let msgs = db
         .run(|conn| {
-            conn.prepare("SELECT id, date, text FROM msgs DESC LIMIT 20")?
+            conn.prepare("SELECT id, msg_type, text FROM msgs DESC LIMIT 20")?
                 .query_map(params![], |row| {
                     Ok(Message {
                         id: Some(row.get(0)?),
-                        date: row.get(1)?,
+                        msg_type: row.get(1)?,
                         text: row.get(2)?,
                     })
                 })?

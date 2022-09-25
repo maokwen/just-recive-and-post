@@ -3,12 +3,10 @@ use rocket::http::Status;
 use rocket::local::blocking::Client;
 use rocket::serde::{Deserialize, Serialize};
 
-use chrono::{Duration, Utc};
-
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 struct Message {
-    date: String,
+    msg_type: String,
     text: String,
 }
 
@@ -24,13 +22,11 @@ fn test() {
 
     // test post
     for i in 1_usize..=20 {
-        let date = (Utc::now() + Duration::minutes(i as i64))
-            .format("%Y-%m-%d %H:%M:%S")
-            .to_string();
+        let msg_type = "aaa".to_string();
         let text = format!("msg msg {}", i);
         let msg = Message {
-            date: date,
-            text: text,
+            msg_type,
+            text,
         };
 
         let response = client
