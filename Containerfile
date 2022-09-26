@@ -16,3 +16,5 @@ FROM docker.io/rust:slim-bullseye as builder
 WORKDIR /workspace
 COPY ./ .
 RUN cargo install --path .
+
+ENTRYPOINT [ "just-recive-and-post" ]
