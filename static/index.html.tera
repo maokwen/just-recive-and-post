@@ -29,6 +29,7 @@
   <div id="messages">
     {% for msg in msgs %}
     <div class="date">{{ msg.date }}</div>
+    <div class="msg_type">{{ msg.msg_type }}</div>
     <div class="text">{{ msg.text }}</div>
     {% endfor %}
   </div>

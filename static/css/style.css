@@ -1,12 +1,16 @@
 #messages {
   display: grid;
-  grid-template-columns: 11em auto;
+  grid-template-columns: 12em 4em auto;
 }
 
 .date {
   grid-column: 1;
 }
 
-.text {
+.msg_type {
   grid-column: 2;
+}
+
+.text {
+  grid-column: 3;
 }
