@@ -141,7 +141,7 @@ struct Context {
 async fn index(db: Db) -> Template {
     let msgs = db
         .run(|conn| {
-            conn.prepare("SELECT id, date, msg_type, text FROM msgs DESC LIMIT 20")?
+            conn.prepare("SELECT id, date, msg_type, text FROM msgs ORDER BY id DESC LIMIT 20")?
                 .query_map(params![], |row| {
                     Ok(Message {
                         id: Some(row.get(0)?),
