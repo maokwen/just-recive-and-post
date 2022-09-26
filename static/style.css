@@ -1,0 +1,36 @@
+.control-menu {
+  margin: 2em;
+}
+
+.card {
+  padding: 1em;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+}
+
+.item-wrap {
+  max-width: 500px;
+  margin: 2em;
+}
+
+@media screen and (max-width: 600px) {
+  .item-wrap {
+    margin: 1em 0 1em 0;
+  }
+}
+
+.date {
+  font-size: small;
+  text-align: right;
+  color: gray;
+}
+
+.msg_type {
+  font-size: small;
+  color: gray;
+}
+
+.text {
+  margin: 1em 0 0 0;
+}

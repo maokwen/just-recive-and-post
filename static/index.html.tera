@@ -4,8 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@2.1.0/build/pure-min.css"
+    integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@2.1.0/build/grids-responsive-min.css">
+  <link rel="stylesheet" href="style.css">
   <title>共享账号 短信验证码</title>
 </head>
 
@@ -23,14 +26,20 @@
 </script>
 
 <body>
-  <button onclick="clear_all()">Clear All</button>
-  <span id="clear_all_code"></span>
+  <div class="control-menu">
+    <button class="pure-button" onclick="clear_all()">Clear All</button>
+    <span id="clear_all_code"></span>
+  </div>
   {% if msgs %}
-  <div id="messages">
+  <div>
     {% for msg in msgs %}
-    <div class="date">{{ msg.date }}</div>
-    <div class="msg_type">{{ msg.msg_type }}</div>
-    <div class="text">{{ msg.text }}</div>
+    <div class="item-wrap">
+      <div class="card pure-g">
+        <div class="pure-u-1-4 msg_type">{{ msg.msg_type }}</div>
+        <div class="pure-u-3-4 date">{{ msg.date }}</div>
+        <div class="pure-u-1 text">{{ msg.text }}</div>
+      </div>
+    </div>
     {% endfor %}
   </div>
   {% else %}
