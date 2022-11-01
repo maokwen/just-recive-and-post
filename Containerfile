@@ -16,8 +16,8 @@ RUN cargo build --release
 
 # runner
 FROM docker.io/alpine:latest
-RUN addgroup -g 1000 just-recive-and-post
-RUN adduser -D -s /bin/sh -u 1000 -G just-recive-and-post just-recive-and-post
+RUN addgroup -g 1000 app
+RUN adduser -D -s /bin/sh -u 1000 -G app app
 
 WORKDIR /app
 COPY --from=builder /workspace/target/release/just-recive-and-post /app/just-recive-and-post
@@ -25,6 +25,6 @@ COPY --from=builder /workspace/static /app/static
 COPY --from=builder /workspace/db /app/db
 COPY --from=builder /workspace/Rocket.toml /app/Rocket.toml
 
-RUN chown just-recive-and-post:just-recive-and-post just-recive-and-post
-USER just-recive-and-post
+RUN chown -R app:app /app
+USER app
 CMD ["/app/just-recive-and-post"]
