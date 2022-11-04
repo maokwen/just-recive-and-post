@@ -29,7 +29,7 @@ struct Message {
     #[serde(skip_deserializing, skip_serializing_if = "Option::is_none")]
     id: Option<i64>,
     date: Option<String>,
-    msg_type: String,
+    from: String,
     text: String,
 }
 
@@ -59,8 +59,8 @@ async fn create(db: Db, msg: Json<Message>) -> Result<Created<Json<Message>>> {
 
     db.run(move |conn| {
         conn.execute(
-            "INSERT INTO msgs (date, msg_type, text) VALUES (?1, ?2, ?3)",
-            params![date_str, item.msg_type, item.text],
+            "INSERT INTO msgs (date, sms_from, sms_text) VALUES (?1, ?2, ?3)",
+            params![date_str, item.from, item.text],
         )
     })
     .await?;
@@ -73,13 +73,13 @@ async fn read(db: Db, id: i64) -> Option<Json<Message>> {
     let post = db
         .run(move |conn| {
             conn.query_row(
-                "SELECT id, date, msg_type, text FROM msgs WHERE id = ?1",
+                "SELECT id, date, sms_from, sms_text FROM msgs WHERE id = ?1",
                 params![id],
                 |r| {
                     Ok(Message {
                         id: Some(r.get(0)?),
                         date: Some(r.get(1)?),
-                        msg_type: r.get(2)?,
+                        from: r.get(2)?,
                         text: r.get(3)?,
                     })
                 },
@@ -118,8 +118,8 @@ async fn init_db(rocket: Rocket<Build>) -> Rocket<Build> {
             CREATE TABLE IF NOT EXISTS msgs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date VARCHAR NOT NULL,
-                msg_type VARCHAR NOT NULL,
-                text VARCHAR NOT NULL,
+                sms_from VARCHAR NOT NULL,
+                sms_text VARCHAR NOT NULL,
                 published BOOLEAN NOT NULL DEFAULT 0
             )"#,
                 params![],
@@ -141,12 +141,12 @@ struct Context {
 async fn index(db: Db) -> Template {
     let msgs = db
         .run(|conn| {
-            conn.prepare("SELECT id, date, msg_type, text FROM msgs ORDER BY id DESC LIMIT 20")?
+            conn.prepare("SELECT id, date, sms_from, sms_text FROM msgs ORDER BY id DESC LIMIT 20")?
                 .query_map(params![], |row| {
                     Ok(Message {
                         id: Some(row.get(0)?),
                         date: Some(row.get(1)?),
-                        msg_type: row.get(2)?,
+                        from: row.get(2)?,
                         text: row.get(3)?,
                     })
                 })?
@@ -162,7 +162,7 @@ fn rocket() -> _ {
     rocket::build()
         .attach(Db::fairing())
         .attach(AdHoc::on_ignite("Rusqlite Init", init_db))
-        .mount("/db", routes![list, create, read, delete, destroy])
+        .mount("/api", routes![list, create, read, delete, destroy])
         .attach(Template::fairing())
         .mount("/", FileServer::from("static"))
         .mount("/", routes![index])

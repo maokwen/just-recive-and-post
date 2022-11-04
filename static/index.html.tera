@@ -40,8 +40,8 @@
       {% for msg in msgs %}
         <div class="item-wrap">
           <div class="card pure-g">
-            <div class="pure-u-1-4 msg_type">{{ msg.msg_type }}</div>
-            <div class="pure-u-3-4 date">{{ msg.date }}</div>
+            <div class="pure-u-1-2 from">{{ msg.from }}</div>
+            <div class="pure-u-1-2 date">{{ msg.date }}</div>
             <div class="pure-u-1 text">{{ msg.text }}</div>
           </div>
         </div>
