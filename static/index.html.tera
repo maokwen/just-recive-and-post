@@ -14,7 +14,7 @@
 
 <script type="text/javascript">
   const clear_all = async () => {
-    const res = await fetch('db/', { method: 'DELETE' });
+    const res = await fetch('api/', { method: 'DELETE' });
     if (res.status == 200) {
       var s = document.getElementById("clear_all_code");
       s.innerHTML = "Success! Page will refresh soon...";
