@@ -53,8 +53,8 @@ async fn create(db: Db, msg: Json<Message>) -> Result<Created<Json<Message>>> {
     let item = msg.clone();
 
     let now = Utc::now().naive_utc();
-    let offset = FixedOffset::east(8 * 3600);
-    let date = offset.from_utc_datetime(&now);
+    let offset = FixedOffset::east_opt(8 * 3600);
+    let date = offset.unwrap().from_utc_datetime(&now);
     let date_str = format!("{}", date.format("%Y-%m-%d %H:%M:%S"));
 
     db.run(move |conn| {
