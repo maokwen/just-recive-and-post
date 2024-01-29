@@ -184,7 +184,7 @@ async fn init_db(rocket: Rocket<Build>) -> Rocket<Build> {
 #[launch]
 fn rocket() -> _ {
     use rocket::fairing::AdHoc;
-    use rocket::fs::{relative, FileServer};
+    use rocket::fs::FileServer;
     use rocket::tokio::sync::broadcast::channel;
 
     rocket::build()
@@ -193,6 +193,6 @@ fn rocket() -> _ {
         .manage(channel::<Message>(1024).0)
         .mount("/api", routes![list, create, read, delete, destroy])
         .attach(Template::fairing())
-        .mount("/", FileServer::from(relative!("static")))
+        .mount("/", FileServer::from("static"))
         .mount("/", routes![index, watch])
 }
