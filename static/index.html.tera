@@ -17,25 +17,25 @@
     const res = await fetch('api/', { method: 'DELETE' });
     if (res.status == 200) {
       var s = document.getElementById("clear_all_code");
-      s.innerHTML = "Success! Page will refresh soon...";
+      s.innerHTML = "成功！即将刷新页面…";
       setTimeout(function (){
         window.location.reload();
       }, 2000);
       
     } else {
       var s = document.getElementById("clear_all_code");
-      s.innerHTML = "Failure! Error code " + res.status + ".";
+      s.innerHTML = "失败！代码 " + res.status;
     }
   }
 </script>
 
 <body>
   <div class="control-menu">
-    <button class="pure-button" onclick="clear_all()">Clear All</button>
+    <button class="pure-button" onclick="clear_all()">清空</button>
     <span id="clear_all_code"></span>
   </div>
   <div>
-  <div class="list-wrap">
+  <div id="sms-list" class="list-wrap">
     {% if msgs %}
       {% for msg in msgs %}
         <div class="item-wrap">
@@ -47,9 +47,43 @@
         </div>
       {% endfor %}
     {% else %}
-      <p>No message.</p>
+      <p>没有信息</p>
     {% endif %}
   </div>
 </body>
+
+<script type="text/javascript">
+  const evtSource = new EventSource("/watch");
+  evtSource.onmessage = (event) => {
+    const list = document.getElementById("sms-list");
+    const item = document.createElement("div");
+    const card = document.createElement("div");
+    const from = document.createElement("div");
+    const date = document.createElement("div");
+    const text = document.createElement("div");
+
+    item.setAttribute("class", "item-wrap");
+    card.setAttribute("class", "card card-new pure-g");
+    from.setAttribute("class", "pure-u-1-2 from");
+    date.setAttribute("class", "pure-u-1-2 date");
+    text.setAttribute("class", "pure-u-1 text");
+
+    item.appendChild(card);
+    card.appendChild(from);
+    card.appendChild(date);
+    card.appendChild(text);
+    list.insertBefore(item, list.firstChild);
+
+    console.log(event.data);
+
+    from.textContent = `${JSON.parse(event.data).from}`;
+    date.textContent = `${JSON.parse(event.data).date}`;
+    text.textContent = `${JSON.parse(event.data).text}`;
+  };
+
+  evtSource.onerror = (err) => {
+    console.error("EventSource failed:", err);
+  };
+</script>
 
 </html>

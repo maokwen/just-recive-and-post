@@ -9,6 +9,10 @@
   border-radius: 5px;
 }
 
+.card-new {
+  border: 1px solid #aad;
+}
+
 .list-wrap {
   margin: 0 2em 0 2em;
 }

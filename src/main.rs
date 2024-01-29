@@ -6,10 +6,11 @@ extern crate rocket_sync_db_pools;
 #[cfg(test)]
 mod test;
 
-use rocket::fairing::AdHoc;
-use rocket::fs::FileServer;
+use rocket::tokio::sync::broadcast::Sender;
 use rocket::response::{status::Created, Debug};
+use rocket::response::stream::{Event, EventStream};
 use rocket::serde::{json::Json, Deserialize, Serialize};
+use rocket::{State, Shutdown};
 use rocket::{Build, Rocket};
 
 use rocket_dyn_templates::Template;
@@ -33,6 +34,12 @@ struct Message {
     text: String,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(crate = "rocket::serde")]
+struct Context {
+    msgs: Option<Vec<Message>>,
+}
+
 type Result<T, E = Debug<rusqlite::Error>> = std::result::Result<T, E>;
 
 #[get("/")]
@@ -49,23 +56,26 @@ async fn list(db: Db) -> Result<Json<Vec<i64>>> {
 }
 
 #[post("/", data = "<msg>")]
-async fn create(db: Db, msg: Json<Message>) -> Result<Created<Json<Message>>> {
-    let item = msg.clone();
-
+async fn create(db: Db, msg: Json<Message>, queue: &State<Sender<Message>>) -> Result<Created<Json<Message>>> {
     let now = Utc::now().naive_utc();
     let offset = FixedOffset::east_opt(8 * 3600);
     let date = offset.unwrap().from_utc_datetime(&now);
     let date_str = format!("{}", date.format("%Y-%m-%d %H:%M:%S"));
-
+    
+    let mut item = msg.clone();
+    item.date = Some(date_str.clone());
+    
     db.run(move |conn| {
         conn.execute(
             "INSERT INTO msgs (date, sms_from, sms_text) VALUES (?1, ?2, ?3)",
-            params![date_str, item.from, item.text],
+            params![date_str, msg.from, msg.text],
         )
     })
     .await?;
 
-    Ok(Created::new("/").body(msg))
+    let _ = queue.send(item.clone().into_inner());
+
+    Ok(Created::new("/").body(item))
 }
 
 #[get("/<id>")]
@@ -108,6 +118,46 @@ async fn destroy(db: Db) -> Result<()> {
     Ok(())
 }
 
+#[get("/")]
+async fn index(db: Db) -> Template {
+    let msgs: std::prelude::v1::Result<Vec<Message>, rusqlite::Error> = db
+        .run(|conn| {
+            conn.prepare("SELECT id, date, sms_from, sms_text FROM msgs ORDER BY id DESC LIMIT 20")?
+                .query_map(params![], |row| {
+                    Ok(Message {
+                        id: Some(row.get(0)?),
+                        date: Some(row.get(1)?),
+                        from: row.get(2)?,
+                        text: row.get(3)?,
+                    })
+                })?
+                .collect::<Result<Vec<Message>, _>>()
+        })
+        .await;
+
+    Template::render("index", Context { msgs: msgs.ok() })
+}
+
+#[get("/watch")]
+async fn watch(queue: &State<Sender<Message>>, mut end: Shutdown) -> EventStream![] {
+    use rocket::tokio::sync::broadcast::error::RecvError;
+
+    let mut rx = queue.subscribe();
+    EventStream! {
+        loop {
+            let msg = rocket::tokio::select! {
+                msg = rx.recv() => match msg {
+                    Ok(msg) => msg,
+                    Err(RecvError::Closed) => break,
+                    Err(RecvError::Lagged(_)) => continue,
+                },
+                _ = &mut end => break,
+            };
+            yield Event::json(&msg);
+        }
+    }
+}
+
 async fn init_db(rocket: Rocket<Build>) -> Rocket<Build> {
     Db::get_one(&rocket)
         .await
@@ -131,39 +181,18 @@ async fn init_db(rocket: Rocket<Build>) -> Rocket<Build> {
     rocket
 }
 
-#[derive(Debug, Serialize)]
-#[serde(crate = "rocket::serde")]
-struct Context {
-    msgs: Option<Vec<Message>>,
-}
-
-#[get("/")]
-async fn index(db: Db) -> Template {
-    let msgs = db
-        .run(|conn| {
-            conn.prepare("SELECT id, date, sms_from, sms_text FROM msgs ORDER BY id DESC LIMIT 20")?
-                .query_map(params![], |row| {
-                    Ok(Message {
-                        id: Some(row.get(0)?),
-                        date: Some(row.get(1)?),
-                        from: row.get(2)?,
-                        text: row.get(3)?,
-                    })
-                })?
-                .collect::<Result<Vec<Message>, _>>()
-        })
-        .await;
-
-    Template::render("index", Context { msgs: msgs.ok() })
-}
-
 #[launch]
 fn rocket() -> _ {
+    use rocket::fairing::AdHoc;
+    use rocket::fs::{relative, FileServer};
+    use rocket::tokio::sync::broadcast::channel;
+
     rocket::build()
         .attach(Db::fairing())
         .attach(AdHoc::on_ignite("Rusqlite Init", init_db))
+        .manage(channel::<Message>(1024).0)
         .mount("/api", routes![list, create, read, delete, destroy])
         .attach(Template::fairing())
-        .mount("/", FileServer::from("static"))
-        .mount("/", routes![index])
+        .mount("/", FileServer::from(relative!("static")))
+        .mount("/", routes![index, watch])
 }

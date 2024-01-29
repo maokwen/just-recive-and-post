@@ -5,9 +5,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-rocket = { version = "0.5.0", features = ["json"] }
-rocket_dyn_templates = { version = "0.1.0", features = ["tera"] }
-rocket_sync_db_pools = { version = "0.1.0", features = ["sqlite_pool"] }
-rusqlite = { version = "0.29.0", features = ["bundled"] }
+rocket = { version = "0.5", features = ["json"] }
+rocket_dyn_templates = { version = "0.1", features = ["tera"] }
+rocket_sync_db_pools = { version = "0.1", features = ["sqlite_pool"] }
+rusqlite = { version = "0.29", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 chrono = "0.4.31"
