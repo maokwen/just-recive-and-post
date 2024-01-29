@@ -8,6 +8,6 @@ publish = false
 rocket = { version = "0.5", features = ["json"] }
 rocket_dyn_templates = { version = "0.1", features = ["tera"] }
 rocket_sync_db_pools = { version = "0.1", features = ["sqlite_pool"] }
-rusqlite = { version = "0.29", features = ["bundled"] }
+rusqlite = { version = "0.30", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 chrono = "0.4.31"
